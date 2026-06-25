@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* פונט מותאם לפרויקט */
+@font-face {
+  font-family: "BookConnectSerif";
+  src: local("Georgia");
+}
+
+/* שימוש בדרישת text-shadow */
+.book-title-shadow {
+  text-shadow: 2px 2px 4px rgba(111, 78, 55, 0.25);
+}
+
+/* שימוש בדרישת multiple-columns */
+.book-columns {
+  column-count: 2;
+  column-gap: 2rem;
+}
+
+/* התאמה למסכים קטנים */
+@media (max-width: 768px) {
+  .book-columns {
+    column-count: 1;
+  }
+}
+
+/* שימוש בפונט שהוגדר */
+.book-font {
+  font-family: "BookConnectSerif", Georgia, serif;
+}

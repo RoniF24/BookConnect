@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+my-app/node_modules/
+server/node_modules/
+
+# Next.js build/cache
+my-app/.next/
+my-app/out/
+
+# environment files - never commit secrets
+.env
+.env.*
+my-app/.env
+my-app/.env.*
+server/.env
+server/.env.*
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# uploads/temp files
+server/uploads/
+
+# build outputs
+build/
+dist/
+
+!server/.env.example
