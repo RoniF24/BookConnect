@@ -314,4 +314,4 @@ This allows the system to demonstrate permissions, feeds, private group behavior
 
 ## Author
 
-Roni Fadlon
+Roni Fadlon and Michael Kovalchuk
