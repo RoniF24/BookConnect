@@ -55,6 +55,17 @@ const saveFileToGridFS = (file) => {
   });
 };
 
+// בדיקה אם משתמש חבר בקבוצה
+const isUserGroupMember = (group, userId) => {
+  if (!group || !userId) {
+    return false;
+  }
+
+  return group.members?.some(
+    (memberId) => memberId.toString() === userId.toString()
+  );
+};
+
 // בדיקה אם משתמש רשאי לראות פוסט מסוים
 const canUserViewPost = (post, userId) => {
   const group = post.group;
@@ -74,9 +85,7 @@ const canUserViewPost = (post, userId) => {
   }
 
   // בקבוצה פרטית רק חברי הקבוצה יכולים לראות
-  return group.members?.some(
-    (memberId) => memberId.toString() === userId.toString()
-  );
+  return isUserGroupMember(group, userId);
 };
 
 // שליפת פוסט מלא אחרי שינוי
@@ -116,9 +125,7 @@ const createPost = async (req, res) => {
     }
 
     // בדיקה שהמשתמש חבר בקבוצה
-    const isMember = group.members.some(
-      (memberId) => memberId.toString() === req.user._id.toString()
-    );
+    const isMember = isUserGroupMember(group, req.user._id);
 
     if (!isMember) {
       return res.status(403).json({
@@ -215,9 +222,7 @@ const getGroupPosts = async (req, res) => {
         });
       }
 
-      const isMember = group.members.some(
-        (memberId) => memberId.toString() === viewerId.toString()
-      );
+      const isMember = isUserGroupMember(group, viewerId);
 
       if (!isMember) {
         return res.status(403).json({
@@ -229,7 +234,7 @@ const getGroupPosts = async (req, res) => {
     // שליפת פוסטים מהחדש לישן
     const posts = await Post.find({ group: groupId })
       .populate("author", "fullName email")
-      .populate("group", "name isPrivate")
+      .populate("group", "name isPrivate members")
       .populate("comments.user", "fullName email")
       .sort({ createdAt: -1 });
 
@@ -528,7 +533,7 @@ const searchPosts = async (req, res) => {
 
     const posts = await Post.find(filter)
       .populate("author", "fullName email")
-      .populate("group", "name isPrivate")
+      .populate("group", "name isPrivate members")
       .populate("comments.user", "fullName email")
       .sort({ createdAt: -1 });
 
@@ -550,7 +555,7 @@ const getMyPosts = async (req, res) => {
   try {
     const posts = await Post.find({ author: req.user._id })
       .populate("author", "fullName email")
-      .populate("group", "name isPrivate")
+      .populate("group", "name isPrivate members")
       .populate("comments.user", "fullName email")
       .sort({ createdAt: -1 });
 
@@ -583,7 +588,7 @@ const getFeedPosts = async (req, res) => {
       group: { $in: groupIds },
     })
       .populate("author", "fullName email")
-      .populate("group", "name isPrivate")
+      .populate("group", "name isPrivate members")
       .populate("comments.user", "fullName email")
       .sort({ createdAt: -1 });
 
@@ -661,9 +666,7 @@ const getUserPosts = async (req, res) => {
         };
       }
 
-      const isViewerMember = group.members?.some(
-        (memberId) => memberId.toString() === viewerId.toString()
-      );
+      const isViewerMember = isUserGroupMember(group, viewerId);
 
       if (isViewerMember) {
         return post;
@@ -710,12 +713,14 @@ const addCommentToPost = async (req, res) => {
       });
     }
 
+    // בדיקה שלא שולחים תגובה ריקה
     if (!text || !text.trim()) {
       return res.status(400).json({
         message: "Comment text is required",
       });
     }
 
+    // שליפת הפוסט יחד עם הקבוצה שלו
     const post = await Post.findById(postId).populate(
       "group",
       "name isPrivate members"
@@ -727,12 +732,14 @@ const addCommentToPost = async (req, res) => {
       });
     }
 
-    if (!canUserViewPost(post, req.user._id)) {
+    // רק חברי הקבוצה יכולים להגיב לפוסטים
+    if (!isUserGroupMember(post.group, req.user._id)) {
       return res.status(403).json({
-        message: "You are not allowed to comment on this post",
+        message: "Only group members can comment on posts",
       });
     }
 
+    // הוספת התגובה
     post.comments.push({
       user: req.user._id,
       text: text.trim(),
@@ -772,6 +779,7 @@ const deleteCommentFromPost = async (req, res) => {
       });
     }
 
+    // שליפת הפוסט יחד עם הקבוצה שלו
     const post = await Post.findById(postId).populate(
       "group",
       "name isPrivate members"
@@ -783,9 +791,10 @@ const deleteCommentFromPost = async (req, res) => {
       });
     }
 
-    if (!canUserViewPost(post, req.user._id)) {
+    // רק חברי הקבוצה יכולים לנהל תגובות בפוסטים של הקבוצה
+    if (!isUserGroupMember(post.group, req.user._id)) {
       return res.status(403).json({
-        message: "You are not allowed to access comments on this post",
+        message: "Only group members can manage comments on posts",
       });
     }
 
